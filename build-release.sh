@@ -38,6 +38,11 @@ if ! command -v bun >/dev/null 2>&1; then
 fi
 command -v bun >/dev/null 2>&1 || { echo "build-release: bun not found (install: curl -fsSL https://bun.sh/install | bash)" >&2; exit 1; }
 
+# rustup installs cargo outside the default PATH; non-interactive shells miss it.
+if ! command -v cargo >/dev/null 2>&1; then
+	export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
+fi
+
 # pi-natives builds through cargo + the N-API CLI; opusic-sys shells out to cmake.
 for tool in cargo cmake ninja; do
 	command -v "$tool" >/dev/null 2>&1 || {
@@ -71,8 +76,31 @@ echo "==> bun install"
 echo "==> building pi-natives (cargo/N-API)"
 (cd "$REPO_ROOT" && bun run build:native)
 
+# Generate the embedded-addons archive in its own process. The coding-agent
+# build also does this in-process, but Bun 1.4.2's bundler intermittently
+# reports `Could not resolve: "../native/embedded-addons.<tag>.tar.gz"` for the
+# archive that process just wrote — observed on a fresh checkout with the file
+# demonstrably on disk (52 MB, present in `readdir`). Seeding it before the
+# bundler process starts makes the resolution deterministic.
+echo "==> embedding native addons"
+(cd "$REPO_ROOT" && bun --cwd=packages/natives run gen:native)
+ARCHIVE=$(ls "$REPO_ROOT"/packages/natives/native/embedded-addons.*.tar.gz 2>/dev/null | head -1)
+[ -s "$ARCHIVE" ] || { echo "build-release: embedded addons archive missing after gen:native" >&2; exit 1; }
+
 echo "==> compiling standalone binary"
-(cd "$REPO_ROOT" && bun --cwd=packages/coding-agent run build)
+compile_binary() { (cd "$REPO_ROOT" && bun --cwd=packages/coding-agent run build); }
+COMPILE_LOG=$(mktemp)
+if compile_binary 2>&1 | tee "$COMPILE_LOG"; then
+	rm -f "$COMPILE_LOG"
+elif grep -q 'Could not resolve: "../native/embedded-addons' "$COMPILE_LOG"; then
+	rm -f "$COMPILE_LOG"
+	echo "build-release: bundler could not resolve the embedded-addons archive; re-seeding and retrying once" >&2
+	(cd "$REPO_ROOT" && bun --cwd=packages/natives run gen:native) || exit 1
+	compile_binary || exit 1
+else
+	rm -f "$COMPILE_LOG"
+	exit 1
+fi
 [ -x "$BUILT" ] || { echo "build-release: expected binary missing: $BUILT" >&2; exit 1; }
 
 echo "==> smoke test"
