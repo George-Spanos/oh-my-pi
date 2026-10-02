@@ -10,14 +10,16 @@ git clone git@github.com:George-Spanos/oh-my-pi.git
 cd oh-my-pi
 git checkout personal-setup
 
+./install-deps.sh                                    # Debian/Ubuntu: apt + bun + rustup + pinned toolchain
 ./build-release.sh                                   # latest release tag -> ~/.local/bin/omp
 mkdir -p ~/.omp/agent && cp omp-config.yml ~/.omp/agent/config.yml
 ```
 
 ## Requirements
 
-- `bun`, `cargo`, `cmake`, `ninja` on `PATH`
-- `~/.local/bin` on `PATH` (where `build-release.sh` symlinks `omp`)
+- `bun`, `cargo`, `cmake`, `ninja` on `PATH` (installed by `install-deps.sh`)
+- `~/.local/bin` and `~/.cargo/bin` on `PATH` (`~/.local/bin` is where
+  `build-release.sh` symlinks `omp`)
 
 `build-release.sh --help` lists the flags; pass a tag to pin a version, e.g.
 `./build-release.sh v18.4.8`.
