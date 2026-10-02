@@ -1,0 +1,54 @@
+modelRoles:
+  task: fireworks/deepseek-v4.1-flash
+  plan: fireworks/deepseek-v4.1-flash:max
+  web: web/parallel
+  default: fireworks/deepseek-v4.1-flash:high
+symbolPreset: nerd
+composer:
+  shape: band
+theme:
+  dark: titanium
+setupVersion: 2
+startup:
+  checkUpdate: false
+retry:
+  fallbackChains:
+    web:
+      - web/perplexity
+      - google-gemini-cli/gemini-2.5-flash
+      - google-antigravity/gemini-2.5-flash
+      - google/gemini-2.5-flash
+      - anthropic/claude-haiku-4-5
+      - openai-codex/gpt-5.6-luna
+      - xai/grok-4.5
+      - web/zai
+      - web/exa
+      - web/tinyfish
+      - web/jina
+      - web/kagi
+      - web/tavily
+      - web/firecrawl
+      - web/brave
+      - web/kimi
+      - web/parallel
+      - web/synthetic
+      - web/searxng
+      - web/startpage
+      - web/duckduckgo
+      - web/ecosia
+      - web/google
+      - web/mojeek
+      - openai-codex/gpt-5.6
+      - openai-codex/gpt-5.5
+      - xai-oauth/grok-4.5
+      - web/ollama
+providers:
+  fireworksTier: standard
+task:
+  agentModelOverrides:
+    security-reviewer: fireworks/deepseek-v4.1-flash
+    sonic: fireworks/deepseek-v4.1-flash
+    task: fireworks/deepseek-v4.1-flash
+hideThinkingBlock: true
+memory:
+  backend: mnemopi
