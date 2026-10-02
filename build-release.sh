@@ -76,12 +76,13 @@ echo "==> bun install"
 echo "==> building pi-natives (cargo/N-API)"
 (cd "$REPO_ROOT" && bun run build:native)
 
-# Generate the embedded-addons archive in its own process. The coding-agent
-# build also does this in-process, but Bun 1.4.2's bundler intermittently
-# reports `Could not resolve: "../native/embedded-addons.<tag>.tar.gz"` for the
-# archive that process just wrote — observed on a fresh checkout with the file
-# demonstrably on disk (52 MB, present in `readdir`). Seeding it before the
-# bundler process starts makes the resolution deterministic.
+# Generate the embedded-addons archive in its own process before the bundler
+# starts. Bun 1.4.2 intermittently failed the compile on a fresh checkout with
+#   Could not resolve: "../native/embedded-addons.<tag>.tar.gz"
+# even though that archive was on disk at the moment Bun.build ran (52 MB, seen
+# by readdir/stat immediately before). Seeding it up front removes the
+# create-then-resolve ordering inside the bundler process; the retry below
+# covers a resolver that still misses it.
 echo "==> embedding native addons"
 (cd "$REPO_ROOT" && bun --cwd=packages/natives run gen:native)
 ARCHIVE=$(ls "$REPO_ROOT"/packages/natives/native/embedded-addons.*.tar.gz 2>/dev/null | head -1)
