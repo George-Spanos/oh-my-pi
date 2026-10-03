@@ -62,7 +62,7 @@ echo "==> fetching tags"
 git -C "$REPO_ROOT" fetch --tags --prune origin
 
 if [ -z "$TAG" ]; then
-	TAG=$(git -C "$REPO_ROOT" tag -l 'v*' --sort=-v:refname | head -1)
+	TAG=$(git -C "$REPO_ROOT" tag -l 'v*' --sort=-v:refname | sed -n '1p')
 fi
 [ -n "$TAG" ] || { echo "build-release: no v* tags found" >&2; exit 1; }
 git -C "$REPO_ROOT" rev-parse -q --verify "refs/tags/$TAG" >/dev/null || { echo "build-release: unknown tag $TAG" >&2; exit 1; }
@@ -85,7 +85,7 @@ echo "==> building pi-natives (cargo/N-API)"
 # covers a resolver that still misses it.
 echo "==> embedding native addons"
 (cd "$REPO_ROOT" && bun --cwd=packages/natives run gen:native)
-ARCHIVE=$(ls "$REPO_ROOT"/packages/natives/native/embedded-addons.*.tar.gz 2>/dev/null | head -1)
+ARCHIVE=$(ls "$REPO_ROOT"/packages/natives/native/embedded-addons.*.tar.gz 2>/dev/null | sed -n '1p')
 [ -s "$ARCHIVE" ] || { echo "build-release: embedded addons archive missing after gen:native" >&2; exit 1; }
 
 echo "==> compiling standalone binary"
