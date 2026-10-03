@@ -1,6 +1,7 @@
 modelRoles:
   task: fireworks/deepseek-v4.1-flash
   plan: fireworks/deepseek-v4.1-flash:max
+  slow: fireworks/glm-5.3:high
   web: web/duckduckgo
   default: fireworks/deepseek-v4.1-flash:high
 symbolPreset: nerd
@@ -46,7 +47,7 @@ providers:
   fireworksTier: standard
 task:
   agentModelOverrides:
-    security-reviewer: fireworks/deepseek-v4.1-flash
+    security-reviewer: "@slow"
     sonic: fireworks/deepseek-v4.1-flash
     task: fireworks/deepseek-v4.1-flash
 hideThinkingBlock: true
