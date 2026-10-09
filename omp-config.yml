@@ -2,7 +2,7 @@ modelRoles:
   task: fireworks/deepseek-v4.1-flash
   plan: fireworks/deepseek-v4.1-flash:max
   slow: fireworks/glm-5.3:high
-  web: web/duckduckgo
+  web: web/brave
   default: fireworks/deepseek-v4.1-flash:high
 symbolPreset: nerd
 composer:
@@ -14,35 +14,9 @@ startup:
   checkUpdate: false
 retry:
   fallbackChains:
-    web:
-      - web/perplexity
-      - google-gemini-cli/gemini-2.5-flash
-      - google-antigravity/gemini-2.5-flash
-      - google/gemini-2.5-flash
-      - anthropic/claude-haiku-4-5
-      - openai-codex/gpt-5.6-luna
-      - xai/grok-4.5
-      - web/zai
-      - web/exa
-      - web/tinyfish
-      - web/jina
-      - web/kagi
-      - web/tavily
-      - web/firecrawl
-      - web/brave
-      - web/kimi
-      - web/parallel
-      - web/synthetic
-      - web/searxng
-      - web/startpage
-      - web/duckduckgo
-      - web/ecosia
-      - web/google
-      - web/mojeek
-      - openai-codex/gpt-5.6
-      - openai-codex/gpt-5.5
-      - xai-oauth/grok-4.5
-      - web/ollama
+    # Brave is the only web provider. A present-but-empty array disables the
+    # built-in priority chain; deleting the key would restore it.
+    web: []
 providers:
   fireworksTier: standard
 task:
