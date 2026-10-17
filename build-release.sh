@@ -76,17 +76,19 @@ echo "==> bun install"
 echo "==> building pi-natives (cargo/N-API)"
 (cd "$REPO_ROOT" && bun run build:native)
 
-# Generate the embedded-addons archive in its own process before the bundler
-# starts. Bun 1.4.2 intermittently failed the compile on a fresh checkout with
-#   Could not resolve: "../native/embedded-addons.<tag>.tar.gz"
-# even though that archive was on disk at the moment Bun.build ran (52 MB, seen
-# by readdir/stat immediately before). Seeding it up front removes the
-# create-then-resolve ordering inside the bundler process; the retry below
-# covers a resolver that still misses it.
-echo "==> embedding native addons"
-(cd "$REPO_ROOT" && bun --cwd=packages/natives run gen:native)
-ARCHIVE=$(ls "$REPO_ROOT"/packages/natives/native/embedded-addons.*.tar.gz 2>/dev/null | sed -n '1p')
-[ -s "$ARCHIVE" ] || { echo "build-release: embedded addons archive missing after gen:native" >&2; exit 1; }
+# Tags through ~18.10 needed the embedded-addons archive pre-generated in its
+# own process: Bun 1.4.2 intermittently failed the compile on a fresh checkout
+# with "Could not resolve: ../native/embedded-addons.<tag>.tar.gz" even though
+# the archive was on disk. Newer tags embed addons in-memory during the compile
+# (natives/scripts/embed-native.ts) and have no gen:native script at all, so
+# only run the pre-seed when the tag still ships it.
+if [ -f "$REPO_ROOT/packages/natives/package.json" ] && \
+	grep -q '"gen:native"' "$REPO_ROOT/packages/natives/package.json"; then
+	echo "==> embedding native addons"
+	(cd "$REPO_ROOT" && bun --cwd=packages/natives run gen:native)
+	ARCHIVE=$(ls "$REPO_ROOT"/packages/natives/native/embedded-addons.*.tar.gz 2>/dev/null | sed -n '1p')
+	[ -s "$ARCHIVE" ] || { echo "build-release: embedded addons archive missing after gen:native" >&2; exit 1; }
+fi
 
 echo "==> compiling standalone binary"
 compile_binary() { (cd "$REPO_ROOT" && bun --cwd=packages/coding-agent run build); }
@@ -97,6 +99,11 @@ elif grep -q 'Could not resolve: "../native/embedded-addons' "$COMPILE_LOG"; the
 	rm -f "$COMPILE_LOG"
 	echo "build-release: bundler could not resolve the embedded-addons archive; re-seeding and retrying once" >&2
 	(cd "$REPO_ROOT" && bun --cwd=packages/natives run gen:native) || exit 1
+	compile_binary || exit 1
+elif grep -q 'does not carry the @oh-my-pi/pi-natives@' "$COMPILE_LOG"; then
+	rm -f "$COMPILE_LOG"
+	echo "build-release: native addon missing the release version stamp; rebuilding pi-natives and retrying once" >&2
+	(cd "$REPO_ROOT" && bun run build:native) || exit 1
 	compile_binary || exit 1
 else
 	rm -f "$COMPILE_LOG"
