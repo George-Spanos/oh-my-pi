@@ -29,3 +29,17 @@ mkdir -p ~/.omp/agent && cp omp-config.yml ~/.omp/agent/config.yml
 
 `build-release.sh --help` lists the flags; pass a tag to pin a version, e.g.
 `./build-release.sh v18.4.8`.
+
+## After a build: the helper files "disappear"
+
+`build-release.sh` checks out the release tag (detached HEAD), and tag trees
+are upstream history — they never contain this branch's commits, so
+`build-release.sh`, `install-deps.sh`, `omp-config.yml` and `SETUP.md` vanish
+from the working directory after a build. Nothing is lost; get back with:
+
+```bash
+git checkout personal-setup
+```
+
+Rebasing does not prevent this (a rebase can't inject commits into upstream
+tags), so don't bother.
