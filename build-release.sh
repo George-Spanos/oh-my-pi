@@ -98,7 +98,13 @@ if compile_binary 2>&1 | tee "$COMPILE_LOG"; then
 elif grep -q 'Could not resolve: "../native/embedded-addons' "$COMPILE_LOG"; then
 	rm -f "$COMPILE_LOG"
 	echo "build-release: bundler could not resolve the embedded-addons archive; re-seeding and retrying once" >&2
-	(cd "$REPO_ROOT" && bun --cwd=packages/natives run gen:native) || exit 1
+	if [ -f "$REPO_ROOT/packages/natives/package.json" ] && \
+		grep -q '"gen:native"' "$REPO_ROOT/packages/natives/package.json"; then
+		(cd "$REPO_ROOT" && bun --cwd=packages/natives run gen:native) || exit 1
+	else
+		echo "build-release: tag has no gen:native script; cannot re-seed the archive" >&2
+		exit 1
+	fi
 	compile_binary || exit 1
 elif grep -q 'does not carry the @oh-my-pi/pi-natives@' "$COMPILE_LOG"; then
 	rm -f "$COMPILE_LOG"
